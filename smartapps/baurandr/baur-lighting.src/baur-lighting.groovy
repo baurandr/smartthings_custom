@@ -11,7 +11,7 @@ definition(
 
 preferences {
     // The parent app preferences are pretty simple: just use the app input for the child app.
-    page(name: "mainPage", title: "Lighting Routines", install: true, uninstall: true, submitOnChange: true) {
+    page(name: "mainPage", title: "My Lighting Routines", install: true, uninstall: true, submitOnChange: true) {
         section {
             app(name: "motionActivatedLighting", appName: "Motion Activated Lighting", namespace: "baurandr", title: "Create New Motion Activated Lighting Routine", multiple: true)
         }
