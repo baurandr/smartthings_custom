@@ -45,7 +45,7 @@ preferences {
 def rootPage() {
 	dynamicPage(name: "rootPage", title: "", install: true, uninstall: true) {
 
-		section("What to dim") {
+		section("What to dim?") {
 			input(name: "dimmers", type: "capability.switchLevel", title: "Dimmers", description: null, multiple: true, required: true, submitOnChange: true)
 			if (dimmers) {
 				if (dimmersContainUnsupportedDevices()) {
