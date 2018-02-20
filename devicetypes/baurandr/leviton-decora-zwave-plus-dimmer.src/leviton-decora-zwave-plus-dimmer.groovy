@@ -193,7 +193,7 @@ log.debug "Switch on section of code"
     delayBetween([
             zwave.switchMultilevelV1.switchMultilevelSet(value: 0xFF).format(),
             zwave.switchMultilevelV1.switchMultilevelGet().format()
-    ], 2000)
+    ], 5000)
 }
 
 def off() {
@@ -202,14 +202,14 @@ log.debug "Switch off section of code"
     delayBetween([
             zwave.switchMultilevelV1.switchMultilevelSet(value: 0x00).format(),
             zwave.switchMultilevelV1.switchMultilevelGet().format()
-    ], 2000)
+    ], 5000)
 }
 
 def setLevel(value, durationSeconds = null) {
     log.debug "setLevel >> value: $value, durationSeconds: $durationSeconds"
     def level = toDisplayLevel(value as short)
     def dimmingDuration = 255
-    def getStatusDelay = 2000
+    def getStatusDelay = 5000
     if (durationSeconds != null) {
         durationSeconds = Math.max(Math.min(durationSeconds as int, 127 * 60), 0)
         dimmingDuration = durationSeconds < 128 ? durationSeconds : 127 + Math.round(durationSeconds / 60)
@@ -249,7 +249,7 @@ def flash() {
 }
 
 def poll() {
-    delayBetween(statusCommands, 100)
+    delayBetween(statusCommands, 5000)
 }
 
 def ping() {
