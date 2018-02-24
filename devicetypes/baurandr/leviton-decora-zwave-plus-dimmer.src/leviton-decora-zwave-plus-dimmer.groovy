@@ -390,17 +390,17 @@ private zwaveEvent(physicalgraph.zwave.Command cmd) {
 private dimmerEvent(short level) {
     def result = null
     if (level == 0) {
-	    result << createEvent([name: "button", value: "pushed", data: [buttonNumber: "2"], descriptionText: "Off/Down (button 2) on $device.displayName was pushed", isStateChange: true, type: "physical"])
-        result << createEvent(name: "level", value: 0, unit: "%")
-        result << switchEvent(false)
+	    result = [result, createEvent([name: "button", value: "pushed", data: [buttonNumber: "2"], descriptionText: "Off/Down (button 2) on $device.displayName was pushed", isStateChange: true, type: "physical"])]
+        result = [result, createEvent(name: "level", value: 0, unit: "%")]
+        result = [result, switchEvent(false)]
     } else if (level >= 1 && level <= 100) {
         if (level == 100){
-        	result << createEvent([name: "button", value: "pushed", data: [buttonNumber: "1"], descriptionText: "On/Up on (button 1) $device.displayName was pushed", isStateChange: true, type: "physical"])
+        	result = [result, createEvent([name: "button", value: "pushed", data: [buttonNumber: "1"], descriptionText: "On/Up on (button 1) $device.displayName was pushed", isStateChange: true, type: "physical"])]
         }
-        result << createEvent(name: "level", value: toDisplayLevel(level), unit: "%")
+        result = [result, createEvent(name: "level", value: toDisplayLevel(level), unit: "%")]
         if (device.currentValue("switch") != "on") {
             // Don't blindly trust level. Explicitly request on/off status.
-            result << response(zwave.switchBinaryV1.switchBinaryGet().format())
+            result = [result, response(zwave.switchBinaryV1.switchBinaryGet().format())]
         }
         
     } else {
