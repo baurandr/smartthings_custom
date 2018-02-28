@@ -26,9 +26,12 @@ definition(
 
 preferences {
 	section("Turn on when there's movement..."){
-		input "motion1", "capability.motionSensor", title: "Where?"
+		input "motion1", "capability.motionSensor", title: "Which motion sensor(s)?", multiple: true, required: false
 	}
-	section("And off when there's been no movement for..."){
+	section("Turn on when a contact opens..."){
+		input "contact1", "capability.contactSensor", title: "Which contact sensor(s)?", multiple: true, required: false
+	}
+	section("And off when there's been no movement or contact has been closed for..."){
 		input "minutes1", "number", title: "Minutes?"
 	}
 	section("Turn on/off light(s)..."){
@@ -51,20 +54,22 @@ preferences {
 
 def installed() {
 	initDimmers()
-	subscribe(motion1, "motion", motionHandler)
+	subscribe(motion1, "motion", eventHandler)
+    subscribe(contact1, "contact", eventHandler)
 }
 
 def updated() {
 	unsubscribe()
     initDimmers()
-	subscribe(motion1, "motion", motionHandler)
+	subscribe(motion1, "motion", eventHandler)
+    subscribe(contact1, "contact", eventHandler)
 }
 
-def motionHandler(evt) {
-	log.debug "$evt.name: $evt.value"
+def eventHandler(evt) {
+	log.debug "New Event: $evt.device,  $evt.name: $evt.value"
 
 	def offSwitches = state.switchesToTurnOff
-    if (evt.value == "active"){ //Motion has started
+    if (evt.value == "active" || evt.value == "open"){ //Motion has started or contact open
         //check time
 		def timeOK = true
         if(fromTime && toTime){ 
@@ -86,38 +91,63 @@ def motionHandler(evt) {
         def curMode = location.currentMode
         def modeOK = !modesTurnOnAllowed || modesTurnOnAllowed.contains(curMode)
 
-        log.debug "Current Mode: ${curMode}, Turn on Mode OK: ${modeOK}"
-        log.debug "Turn On time frame OK: ${timeOK}"  
+        log.debug "Current Mode: ${curMode}, Turn on Mode OK: ${modeOK}, Turn On time frame OK: ${timeOK}"
 
         if (timeOK & modeOK) {
             checkAndSetDimmers()
         }
-	} else if (evt.value == "inactive") {
-		if (offSwitches) {
+	} else if (evt.value == "inactive" || evt.value == "closed") {
+    	def allQuiet = allSensorsQuiet()
+        log.debug "All Quiet = ${allQuiet}"
+		if (offSwitches && allQuiet) {
             if(minutes1 <= 0) {
                 turnOffDimmers() 
-                log.debug "Motion has stopped and desired hold time is zero, turning lights off"
+                log.debug "Activity has stopped and desired hold time is zero, turning lights off"
             } else {
-                runIn(minutes1 * 60, scheduleCheck, [overwrite: false])
+                runIn(minutes1 * 60, scheduleCheck, [overwrite: true])
             }
 		}
 	}
 }
 
+def allSensorsQuiet(){
+	def openContacts = contact1.findAll{it.currentValue("contact") == "open"}
+	def activeMotion = motion1.findAll{it.currentValue("motion") == "active"}
+    if (!openContacts && !activeMotion) {
+	    //log.debug "No active sensors"
+    	return true
+    } else {
+    	//log.debug "Active sensors"
+    	return false
+    }
+}
+
 def scheduleCheck() {
 	log.debug "schedule check"
-	def motionState = motion1.currentState("motion")
-    if (motionState.value == "inactive") {
-        def elapsed = now() - motionState.rawDateCreated.time
+	//def motionState = motion1.currentState("motion")
+
+    def allQuiet = allSensorsQuiet()
+    log.debug "All Quiet Schedule Check = ${allQuiet}"
+    //if (motionState.value == "inactive") {
+    if (allQuiet){
+    	//def elapsed = now() - motionState.rawDateCreated.time
+        /*
     	def threshold = 1000 * 60 * minutes1 - 1000
-    	if (elapsed >= threshold) {
-            log.debug "Motion has stayed inactive long enough since last check ($elapsed ms):  turning lights off"
+        def recentStatesMotion = motion1.statesBetween(now(), now()-threshold)
+        def recentStatesContact = contact1.statesBetween(now(), now()-threshold)
+        log.debug "Recent Motion: ${recentStatesMotion}"
+        log.debug "Recent Contact: ${recentStatesContact}"
+		if (!recentStatesMotion && !recentStatesContact) {
+        */
+            log.debug "Activity has stayed inactive long enough since last check ($elapsed ms):  turning lights off"
             turnOffDimmers()
+            /*
     	} else {
-        	log.debug "Motion has not stayed inactive long enough since last check ($elapsed ms):  doing nothing"
+        	log.debug "Activity has not stayed inactive long enough since last check ($elapsed ms):  doing nothing"
         }
+        */
     } else {
-    	log.debug "Motion is active, do nothing and wait for inactive"
+    	log.debug "Activity, do nothing and wait for inactive"
     }
 }
 
