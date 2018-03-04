@@ -14,9 +14,10 @@ definition(
 )
 
 preferences {
-	section("When the contact is open...") {
-		input "contact1", "capability.contactSensor", title: "Which contact sensor?", multiple: true
-	}
+	section("Select contacts...") {
+		input("contact1", "capability.contactSensor", title: "Which contact sensor?", multiple: true)
+        input(name: "openOrClosed", type: "enum", title: "Notify when open or closed?", options: ["open","closed"])
+    }
 	section("For too long...") {
 		input "maxOpenTime", "number", title: "Minutes?"
 	}
@@ -24,7 +25,7 @@ preferences {
 		input "reminderTime", "number", title: "Minutes?", required: false
 	}
 	section("Text me at (optional, sends a push notification if not specified)...") {
-        input("recipients", "contact", title: "Notify", description: "Send notifications to") {
+        input("recipients", "contact", title: "Notify", description: "Send notifications to (separate multiple inputs with commas)") {
             input "phone", "phone", title: "Phone number?", required: false
         }
 	}
@@ -45,10 +46,10 @@ def updated()
 
 def contactHandler(evt) {
 	log.debug "$evt.device $evt.name: $evt.value"
-	def isOpen = evt.value == "open"
+	def isOpen = evt.value == openOrClosed
     //def deviceName = evt.device
     def isNotScheduled = state.status != "scheduled"
-    def openContacts = contact1.findAll{it.currentValue("contact") == "open"}
+    def openContacts = contact1.findAll{it.currentValue("contact") == openOrClosed}
 	def scheduledContacts = state.scheduledContacts
 	def bSchedule = false
 
@@ -75,7 +76,7 @@ def contactHandler(evt) {
 def takeAction(){
 	if (state.status == "scheduled")
 	{
-        def openContacts = contact1.findAll{it.currentValue("contact") == "open"}
+        def openContacts = contact1.findAll{it.currentValue("contact") == openOrClosed}
         def openTooLong = []
         
         openContacts.each { 
@@ -103,10 +104,15 @@ def sendTextMessage(openContacts, openMinutes) {
 
 	log.debug "$openContacts was open too long, texting phone"
     
-    def msg = "Your ${openContacts.label ?: openContacts.name} has been open for more than ${openMinutes} minutes!"
+    def msg = "Your ${openContacts.label ?: openContacts.name} has been ${openOrClosed} for more than ${openMinutes} minutes!"
     
     if (maxOpenTime <= 0){
-    	msg = "Your ${openContacts.label ?: openContacts.name} has been opened!"
+    	if(openOrClosed == "open"){
+    		msg = "Your ${openContacts.label ?: openContacts.name} has been opened!"
+        }
+        else{
+	    	msg = "Your ${openContacts.label ?: openContacts.name} has been closed!"
+        }
     }
     
 	if (location.contactBookEnabled) {
@@ -114,7 +120,16 @@ def sendTextMessage(openContacts, openMinutes) {
     }
     else {
         if (phone) {
-            sendSms(phone, msg)
+            if ( phone.indexOf(",") > 1){
+              def phones = phone.split(",")
+              for ( def i = 0; i < phones.size(); i++) {
+                log.debug "sending SMS ${i+1} to ${phones[i]}"
+                  sendSms(phones[i], msg)
+                }
+              } else {
+                log.debug "sending SMS to ${phone}"
+                sendSms(phone, msg)
+              }
         } else {
             sendPush msg
         }
