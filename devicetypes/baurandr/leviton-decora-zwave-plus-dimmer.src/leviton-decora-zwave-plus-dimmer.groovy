@@ -175,6 +175,27 @@ def configure() {
     commands
 }
 
+/*
+https://products.z-wavealliance.org/products/1956/classes
+Supported Command Classes
+        0x59 Association Group Information V3
+        0x85 Association V2
+        0x20 Basic V2
+        0x70 Configuration V1
+        0x5A Device Reset Local V1
+        0x7A Firmware Update MD V4
+        0x72 Manufacturer Specific V2
+        0x26 Multilevel Switch V4
+        0x73 Powerlevel
+        0x2B Scene Activation
+        0x2C Scene Actuator Configuration
+        0x27 Switch All V1
+        0x86 Version V2
+        Z-Wave Plus Info V2
+Controlled Command Classes
+        Hail
+*/
+
 def parse(String description) {
     def result = null
     def cmd = zwave.parse(description, [0x20: 1, 0x25:1, 0x26:1, 0x70: 1, 0x72: 2])
@@ -302,11 +323,11 @@ private initialize() {
 }
 
 private zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicReport cmd) {
-    dimmerEvent(cmd.value)
+    dimmerEvent(cmd.value, true)
 }
 
 private zwaveEvent(physicalgraph.zwave.commands.switchmultilevelv1.SwitchMultilevelReport cmd) {
-    dimmerEvent(cmd.value)
+    dimmerEvent(cmd.value, false)
 }
 
 private zwaveEvent(physicalgraph.zwave.commands.switchmultilevelv1.SwitchMultilevelStopLevelChange cmd) {
@@ -378,8 +399,10 @@ private zwaveEvent(physicalgraph.zwave.commands.manufacturerspecificv2.Manufactu
 }
 
 private zwaveEvent(physicalgraph.zwave.commands.hailv1.Hail cmd) {
-    createEvent(name: "hail", value: "hail", descriptionText: "Switch button was pressed", displayed: false)
-    def tLevel = device.currentValue("switch")
+	createEvent(name: "hail", value: "hail", descriptionText: "Switch button was pressed")
+    def tSwitch = device.currentValue("switch")
+    def tLevel = device.currentValue("level")
+    log.debug "Hail Switch $tSwitch"
     log.debug "Hail Level $tLevel"
 }
 
@@ -387,17 +410,21 @@ private zwaveEvent(physicalgraph.zwave.Command cmd) {
     log.warn "Unhandled zwave command $cmd"
 }
 
-private dimmerEvent(short level) {
+private dimmerEvent(short level, boolean isPhysical) {
     def result = []
     if (level == 0) {
-	    result << createEvent([name: "button", value: "pushed", data: [buttonNumber: "2"], descriptionText: "Off/Down (button 2) on $device.displayName was pushed", isStateChange: true, type: "physical"])
+	    if (isPhysical){
+        	result << createEvent([name: "button", value: "pushed", data: [buttonNumber: "2"], descriptionText: "Off/Down (button 2) on $device.displayName was pushed", isStateChange: true, type: "physical"])
+        }
         result << createEvent([name: "level", value: 0, unit: "%"])
         result << switchEvent(false)
     } else if (level >= 1 && level <= 100) {
-        if (level == 100){
-        	result << createEvent([name: "button", value: "pushed", data: [buttonNumber: "1"], descriptionText: "On/Up (button 1) $device.displayName was pushed", isStateChange: true, type: "physical"])
-        } else {
-        	result << createEvent([name: "button", value: "pushed", data: [buttonNumber: "3"], descriptionText: "Dimmer (button 3) $device.displayName was pushed", isStateChange: true, type: "physical"])
+		if (isPhysical){
+            if (level == 100){
+                result << createEvent([name: "button", value: "pushed", data: [buttonNumber: "1"], descriptionText: "On/Up (button 1) $device.displayName was pushed", isStateChange: true, type: "physical"])
+            } else {
+                result << createEvent([name: "button", value: "pushed", data: [buttonNumber: "3"], descriptionText: "Dimmer (button 3) $device.displayName was pushed", isStateChange: true, type: "physical"])
+            }
         }
         result << createEvent([name: "level", value: toDisplayLevel(level), unit: "%"])
         if (device.currentValue("switch") != "on") {
