@@ -275,7 +275,9 @@ def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicReport cmd) {
 
 
 def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicSet cmd) {
+    //log.debug "---BASIC SET V1--- ${device.displayName} sent ${cmd}"
 	def result = []
+	//result << createEvent([name: "switch", value: cmd.value ? "on" : "off", type: "physical"])
     if (cmd.value == 255) {
     	result << createEvent([name: "button", value: "pushed", data: [buttonNumber: "1"], descriptionText: "On/Up on (button 1) $device.displayName was pushed", isStateChange: true, type: "physical"])
     }
