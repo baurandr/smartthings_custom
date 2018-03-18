@@ -23,6 +23,7 @@ metadata {
         capability "Sensor"
         capability "Switch"
         capability "Switch Level"
+        capability "Button"
 
         attribute "loadType", "enum", ["incandescent", "led", "cfl"]
         attribute "presetLevel", "number"
@@ -286,7 +287,7 @@ def refresh() {
         commands << zwave.configurationV1.configurationGet(parameterNumber: i).format()
     }
     log.debug "Refreshing with commands $commands"
-    delayBetween(commands, 1000)
+    delayBetween(commands, 5000)
 }
 
 def indicatorNever() {
@@ -414,22 +415,24 @@ private dimmerEvent(short level, boolean isPhysical) {
     def result = []
     if (level == 0) {
 	    if (isPhysical){
-        	result << createEvent([name: "button", value: "pushed", data: [buttonNumber: "2"], descriptionText: "Off/Down (button 2) on $device.displayName was pushed", isStateChange: true, type: "physical"])
+        	result << createEvent([name: "button", value: "off", data: [buttonNumber: "2"], descriptionText: "Off/Down (button 2) on $device.displayName was pushed", isStateChange: true, type: "physical"])
         }
         result << createEvent([name: "level", value: 0, unit: "%"])
         result << switchEvent(false)
     } else if (level >= 1 && level <= 100) {
 		if (isPhysical){
             if (level == 100){
-                result << createEvent([name: "button", value: "pushed", data: [buttonNumber: "1"], descriptionText: "On/Up (button 1) $device.displayName was pushed", isStateChange: true, type: "physical"])
+                result << createEvent([name: "button", value: "on", data: [buttonNumber: "1"], descriptionText: "On/Up (button 1) $device.displayName was pushed", isStateChange: true, type: "physical"])
             } else {
-                result << createEvent([name: "button", value: "pushed", data: [buttonNumber: "3"], descriptionText: "Dimmer (button 3) $device.displayName was pushed", isStateChange: true, type: "physical"])
+                result << createEvent([name: "button", value: "dim", data: [buttonNumber: "3"], descriptionText: "Dimmer (button 3) $device.displayName was pushed", isStateChange: true, type: "physical"])
             }
         }
         result << createEvent([name: "level", value: toDisplayLevel(level), unit: "%"])
         if (device.currentValue("switch") != "on") {
             // Don't blindly trust level. Explicitly request on/off status.
-            result << response(zwave.switchBinaryV1.switchBinaryGet().format())
+            //result << response(zwave.switchBinaryV1.switchBinaryGet().format())
+            def commandDelayMs = 5000
+            result << response(["delay $commandDelayMs", zwave.switchBinaryV1.switchBinaryGet().format()])
         }        
     } else {
         log.debug "Bad dimming level $level"

@@ -229,10 +229,10 @@ def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicSet cmd) {
 	def result = []
     result << createEvent([name: "switch", value: cmd.value ? "on" : "off", type: "physical"])
     if (cmd.value == 255) {
-    	result << createEvent([name: "button", value: "pushed", data: [buttonNumber: "1"], descriptionText: "On/Up on (button 1) $device.displayName was pushed", isStateChange: true, type: "physical"])
+    	result << createEvent([name: "button", value: "on", data: [buttonNumber: "1"], descriptionText: "On/Up on (button 1) $device.displayName was pushed", isStateChange: true, type: "physical"])
     }
 	else if (cmd.value == 0) {
-    	result << createEvent([name: "button", value: "pushed", data: [buttonNumber: "2"], descriptionText: "Off/Down (button 2) on $device.displayName was pushed", isStateChange: true, type: "physical"])
+    	result << createEvent([name: "button", value: "off", data: [buttonNumber: "2"], descriptionText: "Off/Down (button 2) on $device.displayName was pushed", isStateChange: true, type: "physical"])
     }
     return result
 }
@@ -489,12 +489,14 @@ def updated() {
 }
 
 def Up() {
-	sendEvent(name: "button", value: "pushed", data: [buttonNumber: "1"], descriptionText: "On/Up (button 1) on $device.displayName was pushed", isStateChange: true, type: "digital")
+//up press sent from app
+	sendEvent(name: "app button", value: "pushed", data: [buttonNumber: "1"], descriptionText: "On/Up (button 1) on $device.displayName was pushed in app", isStateChange: true, type: "digital")
     on()
 }
 
 def Down() {
-	sendEvent(name: "button", value: "pushed", data: [buttonNumber: "2"], descriptionText: "Off/Down (button 2) on $device.displayName was pushed", isStateChange: true, type: "digital")
+//up press sent from app
+	sendEvent(name: "app button", value: "pushed", data: [buttonNumber: "2"], descriptionText: "Off/Down (button 2) on $device.displayName was pushed in app", isStateChange: true, type: "digital")
     off()
 }
 
