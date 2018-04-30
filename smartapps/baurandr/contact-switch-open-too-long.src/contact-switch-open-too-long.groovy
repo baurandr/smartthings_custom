@@ -29,6 +29,9 @@ preferences {
             input "phone", "phone", title: "Phone number?", required: false
         }
 	}
+    section("Notify on google home:") {
+        input("speaker1", "capability.actuator", title: "Which speaker?", multiple: false)
+    }
 }
 
 def installed()
@@ -126,12 +129,15 @@ def sendTextMessage(openContacts, openMinutes) {
                 log.debug "sending SMS ${i+1} to ${phones[i]}"
                   sendSms(phones[i], msg)
                 }
+                speaker1.customBroadcast(msg)
               } else {
                 log.debug "sending SMS to ${phone}"
                 sendSms(phone, msg)
+                speaker1.customBroadcast(msg)
               }
         } else {
             sendPush msg
+            speaker1.customBroadcast(msg)
         }
     }
 }

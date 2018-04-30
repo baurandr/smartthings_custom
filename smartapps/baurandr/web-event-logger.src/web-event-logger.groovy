@@ -55,7 +55,7 @@ def contactHandler(evt) {
     def eventDate = evt.date
     //def eventDate = evt.isoDate.replaceAll('.','_');
     //def eventDateString = eventDate.format('yyyy-MM-dd HH:mm:ss')
-    def eventDateString = eventDate.format("yyyy-MM-dd hh:mm:ss", location.timeZone)
+    def eventDateString = eventDate.format("yyyy-MM-dd HH:mm:ss", location.timeZone)
 
 //    log.debug "event date string: ${eventDateString}"
 
