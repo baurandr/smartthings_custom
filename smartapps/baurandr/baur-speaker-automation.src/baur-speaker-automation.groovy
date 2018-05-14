@@ -1,8 +1,8 @@
 definition(
-    name: "Baur Security",
+    name: "Baur Speaker Automation",
     namespace: "baurandr",
     author: "Andrew Baur",
-    description: "Container for all security automations",
+    description: "Container for all speaker automations",
     category: "My Apps",
     iconUrl: "http://cdn.device-icons.smartthings.com/Home/home3-icn@2x.png",
     iconX2Url: "http://cdn.device-icons.smartthings.com/Home/home3-icn@2x.png",
@@ -11,10 +11,9 @@ definition(
 
 preferences {
     // The parent app preferences are pretty simple: just use the app input for the child app.
-    page(name: "mainPage", title: "Baur Security Routines", install: true, uninstall: true, submitOnChange: true) {
+    page(name: "mainPage", title: "Baur Speaker Routines", install: true, uninstall: true, submitOnChange: true) {
         section {
-            app(name: "contactSwitchOpenTooLong", appName: "Contact Switch Open Too Long", namespace: "baurandr", title: "Create Contact Switch Open Too Long Monitor", multiple: true)
-            app(name: "baurSpeakerAutomation", appName: "Baur Speaker Automation", namespace: "baurandr", title: "Speaker Automations", multiple: false)
+            app(name: "speakerNotifier", appName: "Speaker Notifier", namespace: "baurandr", title: "Create Speaker Notifier", multiple: true)
         }
     }
 }
@@ -37,10 +36,3 @@ def initialize() {
         log.debug "child app: ${child.label}"
     }
 }
-
-
-
-
-
-
-
