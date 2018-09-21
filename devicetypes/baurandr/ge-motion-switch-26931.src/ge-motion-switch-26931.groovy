@@ -133,6 +133,8 @@ metadata {
                     "2" : "20 sec (default)",
                     "3" : "30 sec",
                     "4" : "45 sec",
+                    "5" : "60 sec",
+                    "6" : "75 sec",
                     "110" : "27 mins",
                 ],
                 required: false

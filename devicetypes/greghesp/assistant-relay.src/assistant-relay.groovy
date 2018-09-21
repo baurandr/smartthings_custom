@@ -67,11 +67,11 @@ def nestStopStream(chromecast) {
   httpPostJSON("/nestStream?stop=true&chromecast=${eChromecast}")
 }
 
-def customCommand(command, user) {
+def customCommand(command, user, converse) {
 	def eCommand = URLEncoder.encode(command, "UTF-8");
   def eUser = URLEncoder.encode(user, "UTF-8");
 
-  httpPostJSON("/custom?command=${eCommand}&user=${eUser}")
+  httpPostJSON("/custom?command=${eCommand}&user=${eUser}&converse=${converse}")
 }
 
 def installed(){

@@ -36,6 +36,9 @@ metadata {
         command "SetDefaultLevel"
         command "LightSenseOn"
 		command "LightSenseOff"
+        command "setModeName"
+        command "SetTimeoutDuration"
+        
         
         attribute "operatingMode", "enum", ["Manual", "Vacancy", "Occupancy"]
         attribute "defaultLevel", "number"
@@ -508,6 +511,20 @@ def refresh() {
 	],100)
 }
 
+def SetTimeoutDuration(value) {
+/*
+"0" : "Test (5s)",
+"1" : "1 minute",
+"5" : "5 minutes (default)",
+"15" : "15 minutes",
+"30" : "30 minutes",
+"255" : "disabled"
+*/
+	def cmds = []
+    cmds << zwave.configurationV1.configurationSet(configurationValue: [value.toInteger()], parameterNumber: 1, size: 1)
+    cmds << zwave.configurationV1.configurationGet(parameterNumber: 1)
+    sendHubCommand(cmds.collect{ new physicalgraph.device.HubAction(it.format()) }, 1000)
+}
 
 def toggleMode() {
 	log.debug("Toggling Mode") 
@@ -524,6 +541,22 @@ def toggleMode() {
     cmds << zwave.configurationV1.configurationGet(parameterNumber: 3)
         sendHubCommand(cmds.collect{ new physicalgraph.device.HubAction(it.format()) }, 1000)
 
+}
+
+def setModeName(newMode) {
+	log.debug("Setting Mode") 
+    def cmds = []
+    if (newMode == "Manual") { 
+    	cmds << zwave.configurationV1.configurationSet(configurationValue: [1] , parameterNumber: 3, size: 1)
+    }
+    else if (newMode == "Vacancy") {
+    	cmds << zwave.configurationV1.configurationSet(configurationValue: [2], parameterNumber: 3, size: 1)
+    }
+    else if (newMode == "Occupancy") {
+    	cmds << zwave.configurationV1.configurationSet(configurationValue: [3], parameterNumber: 3, size: 1)
+    }
+    cmds << zwave.configurationV1.configurationGet(parameterNumber: 3)
+        sendHubCommand(cmds.collect{ new physicalgraph.device.HubAction(it.format()) }, 1000)
 }
 
 
