@@ -4,6 +4,7 @@ definition(
     author: "Andrew Baur",
     description: "Container for all speaker automations",
     category: "My Apps",
+    parent: "baurandr:Baur Security",
     iconUrl: "http://cdn.device-icons.smartthings.com/Home/home3-icn@2x.png",
     iconX2Url: "http://cdn.device-icons.smartthings.com/Home/home3-icn@2x.png",
     iconX3Url: "http://cdn.device-icons.smartthings.com/Home/home3-icn@2x.png")

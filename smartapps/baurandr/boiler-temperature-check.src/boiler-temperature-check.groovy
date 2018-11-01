@@ -85,6 +85,7 @@ def checkTemperatures(){
         }
     }
 	catch (e) {
-        log.error "something went wrong: $e"
+        log.error "Something went wrong with boiler HTTP Get: $e"
+        sendSms(phone, "Something went wrong with boiler HTTP Get: ${e}")
     }
 }

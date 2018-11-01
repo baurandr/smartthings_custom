@@ -48,6 +48,8 @@ def initialize() {
 	// TODO: subscribe to attributes, devices, locations, etc.
 }
 
+include 'asynchttp_v1'
+
 def contactHandler(evt) {
 
     log.debug "$evt.device $evt.name: $evt.value DateTime: $evt.date"
@@ -60,33 +62,18 @@ def contactHandler(evt) {
 //    log.debug "event date string: ${eventDateString}"
 
     def params = [
-        uri: "http://www.baurfam.com/addEvent",
+        uri: "http://www.baurfam.com/addEvent.php",
         query: [eventType: evt.name,
                 eventValue: evt.value,
                 eventDateTime: eventDateString,
-                eventDeviceName: evt.device]
+                eventDeviceName: evt.device],
+		requestContentType: "text/html", 
+		contentType: "text/html"
         ]
     try {
-
-        httpPost(params){ response ->
-           /*
-           response.headers.each {
-                log.debug "${it.name} : ${it.value}"
-            }
-            
-           log.debug "response contentType: ${response.contentType}"
-		   log.debug "raw response: $response.data"
-           log.debug "response status: $response.status"
-           */
-            if (response.status != 200) {
-                log.debug "Logging failed, status = ${response.status}"
-            } else {
-                log.debug "Accepted event(s)"              
-            }
-
-        }
+        asynchttp_v1.post(processResponse, params)
     }
-     catch (e) {
+    catch (e) {
         log.debug "something went wrong: $e"
     }
     catch (groovyx.net.http.ResponseParseException e) {
@@ -99,4 +86,41 @@ def contactHandler(evt) {
 		} catch (e) {
 			def errorInfo = "Error sending value: ${e}"               
 		}
+}
+
+def processResponse(response, data) {
+//log.debug "Process Async response"
+    try {
+            /*
+                   response.headers.each {
+                        log.debug "${it.name} : ${it.value}"
+                    }
+                   log.debug "response contentType: ${response.contentType}"
+                   log.debug "raw response: $response.data"
+                   log.debug "response status: $response.status"
+                   */
+            if (response.status != 200) {
+                log.debug "Logging failed, status = ${response.status}"
+                log.debug "raw response: ${response.errorData}"
+                def headers = response.headers
+                headers.each {header, value ->
+                    log.debug "$header: $value"
+                }
+            } else {
+                log.debug "Accepted event(s)"              
+            }
+    }
+    catch (e) {
+        log.debug "something went wrong: $e"
+    }
+    catch (groovyx.net.http.ResponseParseException e) {
+        // ignore error 200, bogus exception
+        if (e.statusCode != 200) {
+            log.error "Baurfam: ${e}"
+        } else {
+            log.debug "Baurfam accepted event(s)"
+        }                  
+    } catch (e) {
+        def errorInfo = "Error sending value: ${e}"               
+    }
 }

@@ -8,15 +8,15 @@ definition(
     author: "A. Baur",
     description: "Monitor your sensors and get speaker notifications",
     category: "Safety & Security",
-    parent: "baurandr:Baur Security",
+    parent: "baurandr:Baur Speaker Automation",
     iconUrl: "https://s3.amazonaws.com/smartapp-icons/Meta/garage_contact.png",
     iconX2Url: "https://s3.amazonaws.com/smartapp-icons/Meta/garage_contact@2x.png"
 )
 
 preferences {
 	section("Select contacts...") {
-		input("contact1", "capability.contactSensor", title: "Which contact sensor?", multiple: true)
-        input(name: "openOrClosed", type: "enum", title: "Notify when open or closed?", options: ["open","closed"])
+		input("contact1", "capability.contactSensor", title: "Which contact sensor?", multiple: true, required: false)
+        input(name: "openOrClosed", type: "enum", title: "Notify when open or closed?", options: ["open","closed"], required: false)
     }
 	section("Select motion sensors..."){
 		input "motion1", "capability.motionSensor", title: "Which motion sensor(s)?", multiple: true, required: false

@@ -86,6 +86,7 @@ def takeAction(){
         	def openState = it.currentState("contact")
             def elapsed = now() - openState.rawDateCreated.time
             def threshold = 1000 * 60 * maxOpenTime - 1000
+            log.debug "Contact:$it, OpenTime:$openState.rawDateCreated.time, Elapsed:$elapsed, Threshold:$threshold"
             if (elapsed >= threshold) {
             	//log.debug "$it Open Too Long"
                 openTooLong << it
