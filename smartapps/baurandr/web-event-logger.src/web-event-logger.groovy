@@ -29,86 +29,117 @@ preferences {
 
 def installed() {
 	log.debug "Installed with settings: ${settings}"
-	subscribe(contact1, "contact", contactHandler)
-    subscribe(motion1, "motion", contactHandler)
-    subscribe(button1, "button", contactHandler)
 	initialize()
 }
 
 def updated() {
 	log.debug "Updated with settings: ${settings}"
 	unsubscribe()
-    subscribe(contact1, "contact", contactHandler)
-    subscribe(motion1, "motion", contactHandler)
-    subscribe(button1, "button", contactHandler)
+    unschedule()
 	initialize()
 }
 
 def initialize() {
 	// TODO: subscribe to attributes, devices, locations, etc.
+	runEvery5Minutes(eventLogging)
+    def currentLog = new Date(now())
+    state.previousLog = currentLog
 }
 
 include 'asynchttp_v1'
 
-def contactHandler(evt) {
+def eventLogging(){
+    //def limitedEvents = []
+	def queue = []
+	def nowLock = now()
+    
+    def currentLog = new Date(nowLock)
+    def currentLogOffset = new Date(nowLock+1000) //statesBetween appears to be INCLUSIVE so we need to offset on one side
+    
+    def previousLog = Date.parse("yyyy-MM-dd'T'HH:mm:ssZ", state.previousLog);
+    
+    log.debug "previousLog: ${previousLog}, currentLog: ${currentLog}"
 
-    log.debug "$evt.device $evt.name: $evt.value DateTime: $evt.date"
-
-    def eventDate = evt.date
-    //def eventDate = evt.isoDate.replaceAll('.','_');
-    //def eventDateString = eventDate.format('yyyy-MM-dd HH:mm:ss')
-    def eventDateString = eventDate.format("yyyy-MM-dd HH:mm:ss", location.timeZone)
-
-//    log.debug "event date string: ${eventDateString}"
-
-    def params = [
-        uri: "http://www.baurfam.com/addEvent.php",
-        query: [eventType: evt.name,
-                eventValue: evt.value,
-                eventDateTime: eventDateString,
-                eventDeviceName: evt.device],
-		requestContentType: "text/html", 
-		contentType: "text/html"
-        ]
-    try {
-        asynchttp_v1.post(processResponse, params)
+    contact1.each {
+        it.statesBetween("contact", previousLog, currentLog, [max: 300]).each{
+            queue << processEvent(it)
+        }
     }
-    catch (e) {
-        log.debug "something went wrong: $e"
+    motion1.each {
+        it.statesBetween("motion",previousLog, currentLog, [max: 300]).each{
+            queue << processEvent(it)
+        }
     }
-    catch (groovyx.net.http.ResponseParseException e) {
+    button1.each {
+        it.statesBetween("button",previousLog, currentLog, [max: 300]).each{
+            queue << processEvent(it)
+        }
+    }
+
+	def url = "http://www.baurfam.com/addEvent.php"
+	log.debug "<<<<<<<<<<<<<<<<<<<< processQueue >>>>>>>>>>>>>>>>>>>>"
+	if (queue != []) {
+    	queue.sort{it.eventDateTime}
+		log.debug "Events to be sent to baurfam.com: ${queue}"
+        try {
+            asynchttp_v1.put(processResponse, [uri: url, body: queue])
+            state.previousLog = currentLogOffset
+        }
+        catch (e) {
+            log.debug "something went wrong: $e"
+        }
+        catch (groovyx.net.http.ResponseParseException e) {
+            // ignore error 200, bogus exception
+            if (e.statusCode != 200) {
+                log.error "Baurfam: ${e}"
+            } else {
+                log.debug "Baurfam accepted event(s)"
+            }                  
+        }
+        
+/* OLD JSON LOGIC
+		try {
+			httpPutJson([uri: url, body: queue]) {response ->
+				if (response.status != 200) {
+					log.debug "Baurfam logging failed, status = ${response.status}"
+                    state.queue = queue
+				} else {
+					log.debug "Baurfam accepted event(s)"
+                    //log.debug "Response: ${response.data}"
+                    state.queue = []
+				}
+			}
+		} catch (groovyx.net.http.ResponseParseException e) {
 			// ignore error 200, bogus exception
 			if (e.statusCode != 200) {
 				log.error "Baurfam: ${e}"
 			} else {
 				log.debug "Baurfam accepted event(s)"
-			}                  
+			}                   
+			state.queue = []                      
 		} catch (e) {
-			def errorInfo = "Error sending value: ${e}"               
+			def errorInfo = "Error sending value: ${e}"
+			log.error errorInfo
+			state.queue = []                   
 		}
+        */
+	}
 }
 
 def processResponse(response, data) {
 //log.debug "Process Async response"
     try {
-            /*
-                   response.headers.each {
-                        log.debug "${it.name} : ${it.value}"
-                    }
-                   log.debug "response contentType: ${response.contentType}"
-                   log.debug "raw response: $response.data"
-                   log.debug "response status: $response.status"
-                   */
-            if (response.status != 200) {
-                log.debug "Logging failed, status = ${response.status}"
-                log.debug "raw response: ${response.errorData}"
-                def headers = response.headers
-                headers.each {header, value ->
-                    log.debug "$header: $value"
-                }
-            } else {
-                log.debug "Accepted event(s)"              
+        if (response.status != 200) {
+            log.debug "Logging failed, status = ${response.status}"
+            log.debug "raw response: ${response.errorData}"
+            def headers = response.headers
+            headers.each {header, value ->
+                log.debug "$header: $value"
             }
+        } else {
+            log.debug "Baurfam Accepted event(s)"
+            //log.debug "Response: ${response.data}"
+        }
     }
     catch (e) {
         log.debug "something went wrong: $e"
@@ -119,8 +150,18 @@ def processResponse(response, data) {
             log.error "Baurfam: ${e}"
         } else {
             log.debug "Baurfam accepted event(s)"
-        }                  
-    } catch (e) {
-        def errorInfo = "Error sending value: ${e}"               
+            //log.debug "Response: ${response.data}"
+        }
     }
 }
+
+def processEvent(evt){
+    def eventDate = evt.date
+    String eventDateString = eventDate.format("yyyy-MM-dd HH:mm:ss", location.timeZone)
+    String eventNameStr = evt.name
+    String eventValueStr = evt.value
+    String eventDeviceStr = evt.device
+    
+    return [eventType: eventNameStr, eventValue: eventValueStr, eventDateTime: eventDateString, eventDeviceName: eventDeviceStr]
+}
+
