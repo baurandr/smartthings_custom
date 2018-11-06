@@ -13,7 +13,10 @@ preferences {
     // The parent app preferences are pretty simple: just use the app input for the child app.
     page(name: "mainPage", title: "My Lighting Routines", install: true, uninstall: true, submitOnChange: true) {
         section {
-            app(name: "motionActivatedLighting", appName: "Motion Activated Lighting", namespace: "baurandr", title: "Create New Motion/Contact Activated Lighting Routine", multiple: true)
+            app(name: "motionActivatedLighting", appName: "Motion & Contact Activated Lighting", namespace: "baurandr", title: "Create New Motion/Contact Activated Lighting Routine", multiple: true)
+        }
+                section {
+            app(name: "motionActivatedLightingV2", appName: "Motion & Contact Activated Lighting v2", namespace: "baurandr", title: "Create New Motion/Contact Activated Lighting Routine v2", multiple: true)
         }
 		section {
             app(name: "doubleTap", appName: "Double Tap", namespace: "baurandr", title: "Create Double Tap Lighting Routine", multiple: true)

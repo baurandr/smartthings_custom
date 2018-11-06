@@ -49,6 +49,7 @@ def initialize() {
 include 'asynchttp_v1'
 
 def eventLogging(){
+	log.debug "<<<<<<<<<<<<<<<<<<<< Event Logging >>>>>>>>>>>>>>>>>>>>"
     //def limitedEvents = []
 	def queue = []
 	def nowLock = now()
@@ -77,7 +78,7 @@ def eventLogging(){
     }
 
 	def url = "http://www.baurfam.com/addEvent.php"
-	log.debug "<<<<<<<<<<<<<<<<<<<< processQueue >>>>>>>>>>>>>>>>>>>>"
+	
 	if (queue != []) {
     	queue.sort{it.eventDateTime}
 		log.debug "Events to be sent to baurfam.com: ${queue}"
@@ -123,7 +124,10 @@ def eventLogging(){
 			state.queue = []                   
 		}
         */
-	}
+	} else {
+    	state.previousLog = currentLogOffset
+        log.debug "Queue Empty"
+    }
 }
 
 def processResponse(response, data) {
